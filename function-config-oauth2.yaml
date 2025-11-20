@@ -1,0 +1,29 @@
+tenant: "public"
+namespace: "default"
+name: "pubsub-publisher-oauth2"
+className: "com.example.pulsar.function.PubSubPublisherOAuth2Function"
+
+inputs:
+  - "your-pulsar-input-topic"
+
+autoAck: true
+parallelism: 1
+
+userConfig:
+  gcp.project.id: "your-gcp-project-id"
+  gcp.pubsub.topic: "your-pubsub-topic"
+  
+  # METHOD 1: Access Token (short-lived ~1 hour)
+  # Get with: gcloud auth application-default print-access-token
+  gcp.oauth2.access.token: "your-access-token"
+  # gcp.oauth2.token.expiry: "1732057200000"  # Optional
+  
+  # METHOD 2: Refresh Token (long-lived, auto-refreshes)
+  # Get from: ~/.config/gcloud/application_default_credentials.json
+  # gcp.oauth2.client.id: "your-client-id.apps.googleusercontent.com"
+  # gcp.oauth2.client.secret: "your-client-secret"
+  # gcp.oauth2.refresh.token: "your-refresh-token"
+
+maxMessageRetries: 3
+deadLetterTopic: "your-pulsar-dlq-topic"
+

@@ -1,0 +1,19 @@
+tenant: "public"
+namespace: "default"
+name: "pubsub-publisher"
+className: "com.example.pulsar.function.PubSubPublisherFunction"
+
+inputs:
+  - "your-pulsar-input-topic"
+
+autoAck: true
+parallelism: 1
+
+userConfig:
+  gcp.project.id: "your-gcp-project-id"
+  gcp.pubsub.topic: "your-pubsub-topic"
+  gcp.credentials.path: "/path/to/service-account-key.json"
+
+maxMessageRetries: 3
+deadLetterTopic: "your-pulsar-dlq-topic"
+
