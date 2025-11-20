@@ -1,5 +1,10 @@
 # Maven
-target/
+#target/
+target/maven-archiver/
+target/maven-status/
+target/classes/
+target/generated-sources/
+target/original-*.jar
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -27,7 +32,7 @@ buildNumber.properties
 *.log
 
 # Package Files
-*.jar
+#*.jar
 *.war
 *.nar
 *.ear

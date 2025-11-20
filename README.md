@@ -22,6 +22,10 @@ Consumes messages from Pulsar topics and publishes them to Google Cloud Pub/Sub,
 mvn clean package
 ```
 
+This creates `target/pubsub-pulsar-function-1.0.0.jar` (41MB) - the deployable JAR with all dependencies.
+
+**Note:** Maven also creates `original-*.jar` (8KB, classes only) - you can ignore this.
+
 ### 2. Start Pulsar
 
 ```bash
