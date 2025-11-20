@@ -86,7 +86,7 @@ gcloud pubsub subscriptions pull your-subscription --auto-ack --limit=5
 
 ## Authentication
 
-### Service Account (Recommended)
+### Service Account
 
 1. **Create service account key**:
 ```bash
@@ -108,7 +108,7 @@ gcloud projects add-iam-policy-binding YOUR_PROJECT \
 ./localrun.sh
 ```
 
-### OAuth2 (Alternative)
+### OAuth2
 
 See [OAUTH2-SETUP.md](OAUTH2-SETUP.md) for complete OAuth2 setup.
 
