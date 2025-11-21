@@ -44,7 +44,9 @@ inputs:
 userConfig:
   gcp.project.id: "your-project-id"
   gcp.pubsub.topic: "your-topic"
-  gcp.credentials.path: "/path/to/service-account-key.json"
+  gcp.pubsub.endpoint: "pubsub.googleapis.com:443"
+  # Use base64-encoded credentials (recommended) or file path
+  gcp.credentials.base64: "<base64-encoded service account json>"
 ```
 
 **Option B: OAuth2** (for testing)
@@ -92,6 +94,8 @@ gcloud pubsub subscriptions pull your-subscription --auto-ack --limit=5
 
 ### Service Account
 
+**Recommended for Pulsar**: Use base64-encoded credentials in configuration.
+
 1. **Create service account key**:
 ```bash
 gcloud iam service-accounts keys create service-account-key.json \
@@ -105,7 +109,29 @@ gcloud projects add-iam-policy-binding YOUR_PROJECT \
     --role="roles/pubsub.publisher"
 ```
 
-3. **Update config** with path to key file
+3. **Encode credentials** (choose one method):
+
+   **Method 1 (Recommended): Base64-encoded JSON**
+   ```bash
+   cat service-account-key.json | base64 | tr -d '\n'
+   ```
+   Then add to config:
+   ```yaml
+   userConfig:
+     gcp.credentials.base64: "<paste base64 string here>"
+   ```
+
+   **Method 2: Raw JSON string**
+   ```yaml
+   userConfig:
+     gcp.credentials.json: '{"type":"service_account","project_id":"...",...}'
+   ```
+
+   **Method 3: File path** (for local testing only)
+   ```yaml
+   userConfig:
+     gcp.credentials.path: "/path/to/service-account-key.json"
+   ```
 
 4. **Run**:
 ```bash

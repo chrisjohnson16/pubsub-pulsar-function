@@ -3,27 +3,43 @@ namespace: "default"
 name: "pubsub-publisher-oauth2"
 className: "com.example.pulsar.function.PubSubPublisherOAuth2Function"
 
+# Input topic to consume messages from
 inputs:
   - "your-pulsar-input-topic"
 
+# Auto-acknowledge messages after successful processing
 autoAck: true
+
+# Parallelism - number of function instances to run
 parallelism: 1
 
+# User configuration passed to the function
 userConfig:
   gcp.project.id: "your-gcp-project-id"
   gcp.pubsub.topic: "your-pubsub-topic"
+  gcp.pubsub.endpoint: "pubsub.googleapis.com:443"
+  # OAuth2 Authentication - Choose ONE method below:
   
-  # METHOD 1: Access Token (short-lived ~1 hour)
-  # Get with: gcloud auth application-default print-access-token
-  gcp.oauth2.access.token: "your-access-token"
-  # gcp.oauth2.token.expiry: "1732057200000"  # Optional
+  # METHOD 1: Access Token (short-lived, expires in ~1 hour)
+  # Good for: Quick testing
+  # Get token with: gcloud auth application-default print-access-token
+  gcp.oauth2.access.token: "your-access-token-here"
+  #gcp.oauth2.token.expiry: "1732057200000"  # Optional: expiry in milliseconds
   
   # METHOD 2: Refresh Token (long-lived, auto-refreshes)
-  # Get from: ~/.config/gcloud/application_default_credentials.json
-  # gcp.oauth2.client.id: "your-client-id.apps.googleusercontent.com"
-  # gcp.oauth2.client.secret: "your-client-secret"
-  # gcp.oauth2.refresh.token: "your-refresh-token"
+  # Good for: Production use with user credentials
+  # Get these from: ~/.config/gcloud/application_default_credentials.json
+  # after running: gcloud auth application-default login
+  #gcp.oauth2.client.id: "your-client-id-here"
+  #gcp.oauth2.client.secret: "your-client-secret-here"
+  #gcp.oauth2.refresh.token: "your-refresh-token-here"
 
+# Timeout for function execution (in milliseconds)
+timeoutMs: 30000
+
+# Number of retries for failed messages
 maxMessageRetries: 3
+
+# Dead letter topic for messages that fail after all retries
 deadLetterTopic: "your-pulsar-dlq-topic"
 

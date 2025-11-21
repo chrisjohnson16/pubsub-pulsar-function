@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Pulsar Function that publishes messages to Google Cloud Pub/Sub using OAuth2 authentication.
  * 
- * Required config: gcp.project.id, gcp.pubsub.topic
+ * Required config: gcp.project.id, gcp.pubsub.topic, gcp.pubsub.endpoint
  * 
  * OAuth2 options (choose one):
  * 1. Access Token: gcp.oauth2.access.token (and optional gcp.oauth2.token.expiry)
@@ -35,6 +35,7 @@ public class PubSubPublisherOAuth2Function implements Function<byte[], Void> {
 
     @Override
     public Void process(byte[] input, Context context) throws Exception {
+        // Lazy initialization on first message
         if (publisher == null) {
             initializePublisher(context);
         }
@@ -42,13 +43,13 @@ public class PubSubPublisherOAuth2Function implements Function<byte[], Void> {
         // Build Pub/Sub message with Pulsar properties as attributes
         PubsubMessage.Builder messageBuilder = PubsubMessage.newBuilder()
                 .setData(ByteString.copyFrom(input));
-        
+
         Map<String, String> properties = context.getCurrentRecord().getProperties();
         if (properties != null && !properties.isEmpty()) {
             messageBuilder.putAllAttributes(properties);
         }
 
-        // Publish and wait for result
+        // Publish synchronously and log message ID
         String messageId = publisher.publish(messageBuilder.build()).get();
         logger.info("Published message to Pub/Sub: {}", messageId);
 
@@ -58,37 +59,47 @@ public class PubSubPublisherOAuth2Function implements Function<byte[], Void> {
     private void initializePublisher(Context context) throws Exception {
         logger = context.getLogger();
         Map<String, Object> config = context.getUserConfigMap();
-        
+
+        // Read configuration
         String projectId = getRequiredConfig(config, "gcp.project.id");
         String topicId = getRequiredConfig(config, "gcp.pubsub.topic");
-        
-        logger.info("Initializing Pub/Sub publisher with OAuth2: {}/{}", projectId, topicId);
+        String endpoint = getRequiredConfig(config, "gcp.pubsub.endpoint");
 
+        logger.info("Initializing Pub/Sub publisher with OAuth2: {}/{}", projectId, topicId);
+        logger.info("Using endpoint: {}", endpoint);
+
+        // Create OAuth2 credentials (access token or refresh token)
         GoogleCredentials credentials = createOAuth2Credentials(config);
         if (credentials == null) {
             throw new IllegalArgumentException("OAuth2 credentials not configured");
         }
 
+        // Build publisher with OAuth2 authentication
         publisher = Publisher.newBuilder(TopicName.of(projectId, topicId))
+                .setEndpoint(endpoint)
                 .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
                 .build();
     }
 
     private GoogleCredentials createOAuth2Credentials(Map<String, Object> config) {
-        // Method 1: Access Token (short-lived)
+        // Option 1: Short-lived access token (expires in ~1 hour)
         String accessToken = getOptionalConfig(config, "gcp.oauth2.access.token");
         if (accessToken != null) {
-            logger.info("Using OAuth2 access token");
+            logger.info("Using OAuth2 access token (length: {})", accessToken.length());
             String expiryStr = getOptionalConfig(config, "gcp.oauth2.token.expiry");
             Date expiry = expiryStr != null ? new Date(Long.parseLong(expiryStr)) : null;
-            return GoogleCredentials.create(new AccessToken(accessToken, expiry));
+            if (expiry != null) {
+                logger.info("Token expiry: {}", expiry);
+            }
+            AccessToken token = new AccessToken(accessToken, expiry);
+            return GoogleCredentials.create(token);
         }
-        
-        // Method 2: Refresh Token (long-lived)
+
+        // Option 2: Long-lived refresh token (auto-refreshes access tokens)
         String clientId = getOptionalConfig(config, "gcp.oauth2.client.id");
         String clientSecret = getOptionalConfig(config, "gcp.oauth2.client.secret");
         String refreshToken = getOptionalConfig(config, "gcp.oauth2.refresh.token");
-        
+
         if (clientId != null && clientSecret != null && refreshToken != null) {
             logger.info("Using OAuth2 refresh token");
             return UserCredentials.newBuilder()
@@ -97,7 +108,7 @@ public class PubSubPublisherOAuth2Function implements Function<byte[], Void> {
                     .setRefreshToken(refreshToken)
                     .build();
         }
-        
+
         return null;
     }
 
