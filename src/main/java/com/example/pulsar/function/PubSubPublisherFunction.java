@@ -35,24 +35,38 @@ public class PubSubPublisherFunction implements Function<byte[], Void> {
     @Override
     public Void process(byte[] input, Context context) throws Exception {
         // Lazy initialization on first message
-        if (publisher == null) {
-            initializePublisher(context);
+        try {
+            if (publisher == null) {
+                initializePublisher(context);
+            }
+        } catch (Exception e) {
+            logger.error("Error initializing publisher", e);
+            throw e;
         }
 
         // Build Pub/Sub message with Pulsar properties as attributes
-        PubsubMessage.Builder messageBuilder = PubsubMessage.newBuilder()
-                .setData(ByteString.copyFrom(input));
+        PubsubMessage.Builder messageBuilder = null;
+        try {
+            messageBuilder = PubsubMessage.newBuilder()
+                    .setData(ByteString.copyFrom(input));
 
-        Map<String, String> properties = context.getCurrentRecord().getProperties();
-        if (properties != null && !properties.isEmpty()) {
-            messageBuilder.putAllAttributes(properties);
+            Map<String, String> properties = context.getCurrentRecord().getProperties();
+            if (properties != null && !properties.isEmpty()) {
+                messageBuilder.putAllAttributes(properties);
+            }
+        } catch (Exception e) {
+            logger.error("Error building Pub/Sub message", e);
+            throw e;
         }
-
         // Publish synchronously and log message ID
-        String messageId = publisher.publish(messageBuilder.build()).get();
-        logger.info("Published message to Pub/Sub: {}", messageId);
-
-        return null;
+        try {
+            String messageId = publisher.publish(messageBuilder.build()).get();
+            logger.info("Published message to Pub/Sub: {}", messageId);
+        } catch (Exception e) {
+            logger.error("Error publishing message to Pub/Sub", e);
+            throw e;
+        }
+    return null;
     }
 
     private void initializePublisher(Context context) throws Exception {
@@ -94,7 +108,9 @@ public class PubSubPublisherFunction implements Function<byte[], Void> {
         if (credentialsBase64 != null) {
             logger.info("Using service account from base64-encoded JSON");
             byte[] decodedBytes = Base64.getDecoder().decode(credentialsBase64);
-            return GoogleCredentials.fromStream(new ByteArrayInputStream(decodedBytes));
+            GoogleCredentials creds = GoogleCredentials.fromStream(new ByteArrayInputStream(decodedBytes));
+            logger.info("Credentials Type: " + creds.getClass().getName());
+            return creds;
         }
 
         // Option 3: File path

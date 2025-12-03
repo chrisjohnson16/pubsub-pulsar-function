@@ -22,3 +22,5 @@ pulsar-admin functions localrun \
     --function-config-file "$CONFIG_FILE" \
     --jar "$JAR_FILE"
 
+
+
