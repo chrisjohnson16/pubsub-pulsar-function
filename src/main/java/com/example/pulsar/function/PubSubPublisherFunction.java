@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +35,12 @@ public class PubSubPublisherFunction implements Function<byte[], Void> {
 
     @Override
     public Void process(byte[] input, Context context) throws Exception {
+        // Ensure logger is available immediately for debugging
+        if (logger == null) {
+            logger = context.getLogger();
+        }
+        logger.info("PubSubPublisherFunction.process() called with {} bytes", input != null ? input.length : 0);
+        
         // Lazy initialization on first message
         try {
             if (publisher == null) {
@@ -66,7 +73,7 @@ public class PubSubPublisherFunction implements Function<byte[], Void> {
             logger.error("Error publishing message to Pub/Sub", e);
             throw e;
         }
-    return null;
+        return null;
     }
 
     private void initializePublisher(Context context) throws Exception {
@@ -100,7 +107,8 @@ public class PubSubPublisherFunction implements Function<byte[], Void> {
         if (credentialsJson != null) {
             logger.info("Using service account from JSON string");
             return GoogleCredentials.fromStream(
-                    new ByteArrayInputStream(credentialsJson.getBytes(StandardCharsets.UTF_8)));
+                    new ByteArrayInputStream(credentialsJson.getBytes(StandardCharsets.UTF_8)))
+                        .createScoped(Arrays.asList("https://www.googleapis.com/auth/cloud-platform"));
         }
 
         // Option 2: Base64-encoded JSON
@@ -108,7 +116,8 @@ public class PubSubPublisherFunction implements Function<byte[], Void> {
         if (credentialsBase64 != null) {
             logger.info("Using service account from base64-encoded JSON");
             byte[] decodedBytes = Base64.getDecoder().decode(credentialsBase64);
-            GoogleCredentials creds = GoogleCredentials.fromStream(new ByteArrayInputStream(decodedBytes));
+            GoogleCredentials creds = GoogleCredentials.fromStream(new ByteArrayInputStream(decodedBytes))
+                    .createScoped(Arrays.asList("https://www.googleapis.com/auth/cloud-platform"));
             logger.info("Credentials Type: " + creds.getClass().getName());
             return creds;
         }
@@ -117,7 +126,8 @@ public class PubSubPublisherFunction implements Function<byte[], Void> {
         String credentialsPath = getOptionalConfig(config, "gcp.credentials.path");
         if (credentialsPath != null) {
             logger.info("Using service account from file: {}", credentialsPath);
-            return GoogleCredentials.fromStream(new FileInputStream(credentialsPath));
+            return GoogleCredentials.fromStream(new FileInputStream(credentialsPath))
+                    .createScoped(Arrays.asList("https://www.googleapis.com/auth/cloud-platform"));
         }
 
         // Option 4: Application Default Credentials
