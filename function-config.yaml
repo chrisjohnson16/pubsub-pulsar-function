@@ -30,4 +30,3 @@ userConfig:
 
 maxMessageRetries: 3
 deadLetterTopic: "<your-pulsar-dlq-topic>"
-

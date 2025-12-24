@@ -44,6 +44,13 @@
             <version>${slf4j.version}</version>
             <scope>provided</scope>
         </dependency>
+
+        <!-- Avro -->
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+        <artifactId>avro</artifactId>
+        <version>1.11.5</version>
+        </dependency>        
     </dependencies>
 
     <build>

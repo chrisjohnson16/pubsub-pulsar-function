@@ -1,0 +1,36 @@
+tenant: "<your-tenant>"
+namespace: "<your-namespace>"
+name: "pubsub-publisher"
+className: "com.example.pulsar.function.GenericCdcToPubSubFunction"
+
+inputSpecs:
+  "<your-pulsar-input-topic>":
+    schemaType: "AUTO_CONSUME"
+
+
+
+autoAck: true
+parallelism: 1
+
+userConfig:
+  gcp.project.id: "<your-project-id>"
+  gcp.pubsub.topic: "<your-pubsub-topic-name>"
+  gcp.pubsub.endpoint: "pubsub.googleapis.com:443"
+  
+  # Service Account Authentication - Choose ONE method:
+  
+  # Method 1 (Recommended): Base64-encoded service account JSON
+  # To encode: cat service-account-key.json | base64 | tr -d '\n'
+  gcp.credentials.base64: "<paste base64 string here>"
+  
+  # Method 2: Raw service account JSON string
+  #gcp.credentials.json: '{"type":"service_account","project_id":"your-project",...}'
+  
+  # Method 3: File path (not recommended for Pulsar deployments)
+  #gcp.credentials.path: "/path/to/service-account-key.json"
+  
+  # Method 4: Omit all credentials to use Application Default Credentials
+
+maxMessageRetries: 3
+deadLetterTopic: "<your-pulsar-dlq-topic>"
+
